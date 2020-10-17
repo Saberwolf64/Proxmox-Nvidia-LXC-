@@ -125,4 +125,10 @@ EOF
 
 pct enter CTID 
 
-apt update && apt upgrade 
+until lxc-info 101 | grep -q IP;do 
+  echo -ne "no ip found \033[0K\r"
+done
+
+pct exec $CTID apt update
+pct exec $CTID -- apt -y upgrade
+pct exec $CTID -- apt -y install nvtop
