@@ -1,5 +1,5 @@
 # Proxmox-Nvidia-LXC-
-how to create an Proxmox LXC in 5.4 pve kernel as of the time of writing 5.4.41-1 
+how to create an Proxmox LXC in 6.2-1 nvidia driver 455.28
 
 install of Nvidia-container-runtime for Debian-based distributions 
 
