@@ -123,7 +123,7 @@ lxc.hook.mount: /usr/share/lxc/hooks/nvidia
 lxc.hook.pre-start: sh -c 'chown :100000 /dev/nvidia*'
 EOF
 
-pct enter $CTID 
+pct enter CTID 
 
 until lxc-info $CTID | grep -q IP;do 
   echo -ne "no ip found \033[0K\r"
