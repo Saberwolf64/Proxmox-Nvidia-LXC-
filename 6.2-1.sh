@@ -59,6 +59,8 @@ apt-get install -qqy nvidia-container-runtime
 #lxc.hook.mount: /usr/share/lxc/hooks/nvidia
 #lxc.hook.pre-start: sh -c 'chown :100000 /dev/nvidia*' # if your still having permission issuse run/add this line to your config
 
+#create LXC 
+
 function msg() {
   local TEXT="$1"
   echo -e "$TEXT"
@@ -109,7 +111,7 @@ pveam download local $TEMPLATE ||
 
 HOSTNAME=PLEX
 TEMPLATE_STRING="local:vztmpl/${TEMPLATE}"
- 
+
 pct create $CTID $TEMPLATE_STRING -cmode shell -features nesting=1 \
   -hostname $HOSTNAME -net0 name=eth0,bridge=vmbr0,ip=dhcp \
   -ostype $OSTYPE -storage $STORAGE --unprivileged=1
@@ -123,7 +125,7 @@ lxc.hook.mount: /usr/share/lxc/hooks/nvidia
 lxc.hook.pre-start: sh -c 'chown :100000 /dev/nvidia*'
 EOF
 
-pct enter CTID 
+pct start $CTID
 
 until lxc-info $CTID | grep -q IP;do 
   echo -ne "no ip found \033[0K\r"
@@ -131,4 +133,4 @@ done
 
 pct exec $CTID apt update
 pct exec $CTID -- apt -y upgrade
-pct exec $CTID -- apt -y install nvtop
+pct exec $CTID -- apt -y install nvtop 
