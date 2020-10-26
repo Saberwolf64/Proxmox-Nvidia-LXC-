@@ -47,9 +47,7 @@ wget -qLO - https://nvidia.github.io/nvidia-container-runtime/$distribution/nvid
 apt-get update
 apt-get install -qqy nvidia-container-runtime
 
-
 #check nvidia-smi works check /dev/nvidia* for nvidia0 nvidia-modeset nvidia-uvm nvidia-uvm toolkit
-
 
 # user must modify lxc config and add lines
 #
@@ -131,6 +129,10 @@ until lxc-info $CTID | grep -q IP;do
   echo -ne "no ip found \033[0K\r"
 done
 
-pct exec $CTID apt update
-pct exec $CTID -- apt -y upgrade
-pct exec $CTID -- apt -y install nvtop 
+lxc-attach -n $CTID -- apt -y install gnupg2
+lxc-attach -n $CTID -- bash -c 'wget -q https://downloads.plex.tv/plex-keys/PlexSign.key -O - | apt-key add -'
+lxc-attach -n $CTID -- bash -c 'echo "deb https://downloads.plex.tv/repo/deb/ public main" > /etc/apt/sources.list.d/plexmediaserver.list'
+lxc-attach -n $CTID -- apt update
+lxc-attach -n $CTID -- apt -y upgrade
+lxc-attach -n $CTID -- apt -y install nvtop 
+lxc-attach -n $CTID -- apt-get -y -o Dpkg::Options::="--force-confnew" install plexmediaserver
