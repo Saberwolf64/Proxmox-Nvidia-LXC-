@@ -125,7 +125,7 @@ EOF
 
 pct enter $CTID 
 
-until lxc-info 101 | grep -q IP;do 
+until lxc-info $CTID | grep -q IP;do 
   echo -ne "no ip found \033[0K\r"
 done
 
