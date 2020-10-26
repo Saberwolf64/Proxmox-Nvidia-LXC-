@@ -1,5 +1,5 @@
 # Proxmox-Nvidia-LXC-
-how to create an Proxmox LXC in 5.4 pve kernel as of the time of writing 5.4.41-1 
+how to create an Proxmox LXC in 6.2-1
 
 install of Nvidia-container-runtime for Debian-based distributions 
 
@@ -50,11 +50,7 @@ crw-rw-rw- 1 nobody nogroup 195,   0 May 19 11:44 /dev/nvidia0
 crw-rw-rw- 1 nobody nogroup 195, 255 May 19 11:44 /dev/nvidiactl
 
 
- wget http://us.download.nvidia.com/XFree86/Linux-x86_64/440.82/NVIDIA-Linux-x86_64-440.82.run
- 
- bash NVIDIA-Linux-x86_64-440.82.run --no-kernel-module # if you run the installer with out --no-kernel-module it will fail to install
- 
- wget https://downloads.plex.tv/plex-media-server-new/1.19.3.2831-181d9145d/debian/plexmediaserver_1.19.3.2831-181d9145d_amd64.deb
+  wget https://downloads.plex.tv/plex-media-server-new/1.19.3.2831-181d9145d/debian/plexmediaserver_1.19.3.2831-181d9145d_amd64.deb
  
  dpkg -i plexmediaserver_1.19.3.2831-181d9145d_amd64.deb
  
