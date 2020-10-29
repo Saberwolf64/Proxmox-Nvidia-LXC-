@@ -47,73 +47,22 @@ wget -qLO - https://nvidia.github.io/nvidia-container-runtime/$distribution/nvid
 apt-get update
 apt-get install -qqy nvidia-container-runtime
 
-#check nvidia-smi works check /dev/nvidia* for nvidia0 nvidia-modeset nvidia-uvm nvidia-uvm toolkit
+#create LXC
+export CTID=$(pvesh get /cluster/nextid)
+export PCT_OSTYPE=ubuntu
+export PCT_OSVERSION=20
+export PCT_DISK_SIZE=20
+export PCT_OPTIONS="     
+  -cmode shell
+  -hostname PLEX
+  -memory 4096
+  -features nesting=1
+  -net0 name=eth0,bridge=vmbr0,ip=dhcp
+  -unprivileged 1
+"
+bash -c "$(wget -qLO - https://raw.githubusercontent.com/Saberwolf64/Proxmox-Nvidia-LXC-/proxmox-6.2-1-ubunutu-contributor-Whiskerz007/LXC_create.sh)"
 
-# user must modify lxc config and add lines
-#
-#lxc.hook.pre-start: sh -c '[ ! -f /dev/nvidia-uvm ] && /usr/bin/nvidia-modprobe -c0 -u'
-#lxc.environment: NVIDIA_VISIBLE_DEVICES=all
-#lxc.environment: NVIDIA_DRIVER_CAPABILITIES=all
-#lxc.hook.mount: /usr/share/lxc/hooks/nvidia
-#lxc.hook.pre-start: sh -c 'chown :100000 /dev/nvidia*' # if your still having permission issuse run/add this line to your config
-
-#create LXC 
-
-function msg() {
-  local TEXT="$1"
-  echo -e "$TEXT"
-}
-function info() {
-  local REASON="$1"
-  local FLAG="\e[36m[INFO]\e[39m"
-  msg "$FLAG $REASON"
-}
-
-while read -r line; do
-  TAG=$(echo $line | awk '{print $1}')
-  TYPE=$(echo $line | awk '{printf "%-10s", $2}')
-  FREE=$(echo $line | numfmt --field 4-6 --from-unit=K --to=iec --format %.2f | awk '{printf( "%9sB", $6)}')
-  ITEM="  Type: $TYPE Free: $FREE "
-  OFFSET=2
-  if [[ $((${#ITEM} + $OFFSET)) -gt ${MSG_MAX_LENGTH:-} ]]; then
-    MSG_MAX_LENGTH=$((${#ITEM} + $OFFSET))
-  fi
-  STORAGE_MENU+=( "$TAG" "$ITEM" "OFF" )
-done < <(pvesm status -content rootdir | awk 'NR>1')
-if [ $((${#STORAGE_MENU[@]}/3)) -eq 0 ]; then
-  warn "'Container' needs to be selected for at least one storage location."
-  die "Unable to detect valid storage location."
-elif [ $((${#STORAGE_MENU[@]}/3)) -eq 1 ]; then
-  STORAGE=${STORAGE_MENU[0]}
-else
-  while [ -z "${STORAGE:+x}" ]; do
-    STORAGE=$(whiptail --title "Storage Pools" --radiolist \
-    "Which storage pool you would like to use for the container?\n\n" \
-    16 $(($MSG_MAX_LENGTH + 23)) 6 \
-    "${STORAGE_MENU[@]}" 3>&1 1>&2 2>&3) || exit
-  done
-fi
-info "Using '$STORAGE' for storage location."
-
-CTID=$(pvesh get /cluster/nextid)
-
-msg "Updating LXC template list..."
-pveam update 
-msg "Downloading LXC template..."
-OSTYPE=ubuntu
-OSVERSION=${OSTYPE}-20
-mapfile -t TEMPLATES < <(pveam available -section system | sed -n "s/.*\($OSVERSION.*\)/\1/p" | sort -t - -k 2 -V)
-TEMPLATE="${TEMPLATES[-1]}"
-pveam download local $TEMPLATE ||
-  die "A problem occured while downloading the LXC template."
-
-HOSTNAME=PLEX
-TEMPLATE_STRING="local:vztmpl/${TEMPLATE}"
-
-pct create $CTID $TEMPLATE_STRING -cmode shell -features nesting=1 \
-  -hostname $HOSTNAME -net0 name=eth0,bridge=vmbr0,ip=dhcp \
-  -ostype $OSTYPE -storage $STORAGE --unprivileged=1
-
+#configure LXC
 LXC_CONFIG=/etc/pve/lxc/${CTID}.conf
 cat <<EOF >> $LXC_CONFIG
 lxc.hook.pre-start: sh -c '[ ! -f /dev/nvidia-uvm ] && /usr/bin/nvidia-modprobe -c0 -u'
@@ -125,10 +74,12 @@ EOF
 
 pct start $CTID
 
+#wait for lxc to report ip from DHCP
 until lxc-info $CTID | grep -q IP;do 
   echo -ne "no ip found \033[0K\r"
 done
 
+#Update/upgrade and install plex,NVtop on LXC
 lxc-attach -n $CTID -- apt -y install gnupg2
 lxc-attach -n $CTID -- bash -c 'wget -q https://downloads.plex.tv/plex-keys/PlexSign.key -O - | apt-key add -'
 lxc-attach -n $CTID -- bash -c 'echo "deb https://downloads.plex.tv/repo/deb/ public main" > /etc/apt/sources.list.d/plexmediaserver.list'
