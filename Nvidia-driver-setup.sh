@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# Setup temporary environment
+trap cleanup EXIT
+function cleanup() {
+  popd >/dev/null
+  rm -rf $TMP_DIR
+}
+TMP_DIR=$(mktemp -d)
+pushd $TMP_DIR >/dev/null
+
 # Install NVidia drivers prerequisites
 apt-get install -qqy pve-headers-`uname -r` gcc make 
 
